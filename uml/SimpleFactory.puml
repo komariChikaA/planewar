@@ -1,0 +1,99 @@
+@startuml
+title Aircraft War Simple Factory Pattern
+
+left to right direction
+skinparam backgroundColor #FAFAF7
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+hide empty members
+
+skinparam package {
+    BackgroundColor #FFFDF5
+    BorderColor #C9B98F
+}
+
+skinparam class {
+    BackgroundColor #FFF8E7
+    BorderColor #7A6A43
+    ArrowColor #5D6B75
+    FontColor #2F2A22
+}
+
+skinparam enum {
+    BackgroundColor #F4F1FB
+    BorderColor #7B6D9C
+}
+
+package "application" {
+    class Game <<Client>>
+}
+
+package "factory" {
+    class EnemySimpleFactory <<SimpleFactory>> {
+        + {static} createEnemy(gameTime, bossPresent): EnemyAircraft
+        + {static} createBoss(): EnemyAircraft
+    }
+
+    class SupplySimpleFactory <<SimpleFactory>> {
+        + {static} createRandomSupply(locationX, locationY): AbstractSupply
+        + {static} createSupply(type, locationX, locationY): AbstractSupply
+        + {static} createSupplyForEnemy(enemy): AbstractSupply
+    }
+
+    abstract class EnemyFactory
+
+    enum SupplyType {
+        BLOOD
+        FIRE
+        FIRE_PLUS
+        BOMB
+        FREEZE
+    }
+}
+
+package "product" {
+    abstract class EnemyAircraft <<Product>>
+    abstract class AbstractSupply <<Product>>
+
+    class MobEnemy
+    class EliteEnemy
+    class ElitePlusEnemy
+    class EliteProEnemy
+    class BossEnemy
+
+    class BloodSupply
+    class BombSupply
+    class FireSupply
+    class FirePlusSupply
+    class FreezeSupply
+}
+
+Game ..> EnemySimpleFactory : uses
+Game ..> SupplySimpleFactory : uses
+
+EnemySimpleFactory ..> EnemyFactory : selects creator
+EnemySimpleFactory ..> EnemyAircraft : returns
+
+SupplySimpleFactory ..> SupplyType : selects type
+SupplySimpleFactory ..> AbstractSupply : returns
+SupplySimpleFactory ..> BloodSupply : creates
+SupplySimpleFactory ..> BombSupply : creates
+SupplySimpleFactory ..> FireSupply : creates
+SupplySimpleFactory ..> FirePlusSupply : creates
+SupplySimpleFactory ..> FreezeSupply : creates
+
+EnemyAircraft <|-- MobEnemy
+EnemyAircraft <|-- EliteEnemy
+EnemyAircraft <|-- ElitePlusEnemy
+EnemyAircraft <|-- EliteProEnemy
+EnemyAircraft <|-- BossEnemy
+
+AbstractSupply <|-- BloodSupply
+AbstractSupply <|-- BombSupply
+AbstractSupply <|-- FireSupply
+AbstractSupply <|-- FirePlusSupply
+AbstractSupply <|-- FreezeSupply
+
+@enduml

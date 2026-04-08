@@ -1,0 +1,70 @@
+@startuml
+title Aircraft Shoot Strategy Pattern
+
+left to right direction
+skinparam backgroundColor #FAFAF7
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+hide empty members
+
+skinparam package {
+    BackgroundColor #FFFDF5
+    BorderColor #C9B98F
+}
+
+skinparam class {
+    BackgroundColor #FFF8E7
+    BorderColor #7A6A43
+    ArrowColor #5D6B75
+    FontColor #2F2A22
+}
+
+skinparam interface {
+    BackgroundColor #EEF6F7
+    BorderColor #5D8A90
+}
+
+package "context" {
+    abstract class EnemyAircraft <<Context>> {
+        - shootStrategy: ShootStrategy
+        + setShootStrategy(strategy): void
+        + shoot()
+    }
+
+    class HeroAircraft <<Context>> {
+        - shootStrategy: ShootStrategy
+        + shoot()
+        + refreshShootStrategy(): void
+    }
+}
+
+package "strategy" {
+    interface ShootStrategy <<Strategy>> {
+        + shoot(aircraft)
+    }
+
+    class NoShootStrategy <<ConcreteStrategy>>
+    class DirectShootStrategy <<ConcreteStrategy>>
+    class ParallelShootStrategy <<ConcreteStrategy>>
+    class ScatterShootStrategy <<ConcreteStrategy>>
+    class CircleShootStrategy <<ConcreteStrategy>>
+}
+
+EnemyAircraft --> ShootStrategy : holds
+HeroAircraft --> ShootStrategy : holds
+
+ShootStrategy <|.. NoShootStrategy
+ShootStrategy <|.. DirectShootStrategy
+ShootStrategy <|.. ParallelShootStrategy
+ShootStrategy <|.. ScatterShootStrategy
+ShootStrategy <|.. CircleShootStrategy
+
+HeroAircraft ..> DirectShootStrategy : switches to
+HeroAircraft ..> ScatterShootStrategy : switches to
+HeroAircraft ..> CircleShootStrategy : switches to
+
+
+
+@enduml

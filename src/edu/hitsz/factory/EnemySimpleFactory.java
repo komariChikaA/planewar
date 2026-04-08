@@ -21,7 +21,7 @@ public class EnemySimpleFactory {
     }
 
     public static EnemyAircraft createBoss() {
-        return BOSS_FACTORY.createEnemy(Main.WINDOW_WIDTH / 2, 0, 0, 0, BOSS_HP);
+        return BOSS_FACTORY.createEnemy(Main.WINDOW_WIDTH / 2, 0, 3, 0, BOSS_HP);
     }
 
     public static EnemyAircraft createEnemy(int gameTime, boolean bossPresent) {
@@ -61,12 +61,12 @@ public class EnemySimpleFactory {
 
     private static int speedFor(EnemyFactory factory) {
         if (factory instanceof ElitePlusEnemyFactory) {
-            return 8;
-        }
-        if (factory instanceof EliteEnemyFactory || factory instanceof EliteProEnemyFactory) {
             return 6;
         }
-        return 5;
+        if (factory instanceof EliteEnemyFactory || factory instanceof EliteProEnemyFactory) {
+            return 5;
+        }
+        return 4;
     }
 
     private static int hpFor(EnemyFactory factory, int hpMultiplier) {

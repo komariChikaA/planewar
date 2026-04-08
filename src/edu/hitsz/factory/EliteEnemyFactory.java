@@ -2,14 +2,14 @@ package edu.hitsz.factory;
 
 import edu.hitsz.aircraft.EliteEnemy;
 import edu.hitsz.aircraft.EnemyAircraft;
-import edu.hitsz.strategy.ParallelShootStrategy;
+import edu.hitsz.strategy.DirectShootStrategy;
 
 public class EliteEnemyFactory extends EnemyFactory {
 
     @Override
     public EnemyAircraft createEnemy(int locationX, int locationY, int speedX, int speedY, int hp) {
         EnemyAircraft enemyAircraft = new EliteEnemy(locationX, locationY, speedX, speedY, hp);
-        enemyAircraft.setShootStrategy(new ParallelShootStrategy(new int[]{-12, 12}, 2, 7, 16));
+        enemyAircraft.setShootStrategy(new DirectShootStrategy(new int[]{0}, 2, 5, 16));
         return enemyAircraft;
     }
 }

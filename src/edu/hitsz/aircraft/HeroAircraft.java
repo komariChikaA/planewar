@@ -1,34 +1,39 @@
 package edu.hitsz.aircraft;
 
-import edu.hitsz.application.Main;
 import edu.hitsz.bullet.BaseBullet;
-import edu.hitsz.bullet.HeroBullet;
 import edu.hitsz.interface_.Crashable;
+import edu.hitsz.strategy.CircleShootStrategy;
+import edu.hitsz.strategy.DirectShootStrategy;
+import edu.hitsz.strategy.ScatterShootStrategy;
+import edu.hitsz.strategy.ShootStrategy;
 
-import java.util.LinkedList;
 import java.util.List;
 
 public class HeroAircraft extends AbstractAircraft implements Crashable {
 
     private static final int DEFAULT_POWER = 24;
     private static final int POWER_LIMIT = 100;
-    private static final int BULLETS_PER_ROW_LIMIT = 6;
-    private static final int SHOOT_ROWS_LIMIT = 3;
     private static final int HERO_HITBOX_WIDTH = 6;
     private static final int HERO_HITBOX_HEIGHT = 6;
     private static final int HERO_RENDER_WIDTH = 40;
     private static final int HERO_RENDER_HEIGHT = 40;
     private static final int DODGE_DURATION = 75;
     private static final int DODGE_COOLDOWN = 750;
+    private static final int HERO_DIRECT_BULLET_SPEED_Y = -8;
+    private static final int HERO_SCATTER_BULLET_SPEED_Y = -7;
 
-    private int bulletsPerRow = 1;
-    private int shootRows = 1;
     private int power = DEFAULT_POWER;
-    private final int direction = -1;
     private int freezeDuration = 0;
     private int homingDuration = 0;
     private int dodgeDuration = 0;
     private int dodgeCooldown = 0;
+    private int scatterShootDuration = 0;
+    private int circleShootDuration = 0;
+
+    private final ShootStrategy directShootStrategy = new DirectShootStrategy(new int[]{0}, -2, HERO_DIRECT_BULLET_SPEED_Y, DEFAULT_POWER);
+    private final ShootStrategy scatterShootStrategy = new ScatterShootStrategy(new int[]{-2, 0, 2}, -2, HERO_SCATTER_BULLET_SPEED_Y, DEFAULT_POWER);
+    private final ShootStrategy circleShootStrategy = new CircleShootStrategy(20, 6, DEFAULT_POWER, 10);
+    private ShootStrategy shootStrategy = directShootStrategy;
 
     private volatile static HeroAircraft instance;
 
@@ -59,39 +64,13 @@ public class HeroAircraft extends AbstractAircraft implements Crashable {
 
     @Override
     public List<BaseBullet> shoot() {
-        List<BaseBullet> res = new LinkedList<>();
-        int baseX = this.getLocationX();
-        int baseY = this.getLocationY() + direction * 2;
-        boolean homing = isHomingActive();
-
-        for (int row = 0; row < shootRows; row++) {
-            int rowY = baseY + row * 16;
-            int rowSpeedY = this.getSpeedY() + direction * (7 + row);
-            for (int i = 0; i < bulletsPerRow; i++) {
-                BaseBullet bullet = new HeroBullet(
-                        baseX + (i * 2 - bulletsPerRow + 1) * 12,
-                        rowY,
-                        0,
-                        rowSpeedY,
-                        power,
-                        homing
-                );
-                res.add(bullet);
-            }
-        }
-        return res;
+        return shootStrategy.shoot(this);
     }
 
     public void moveBy(int dx, int dy) {
-        int nextX = Math.max(0, Math.min(Main.WINDOW_WIDTH, getLocationX() + dx));
-        int nextY = Math.max(0, Math.min(Main.WINDOW_HEIGHT, getLocationY() + dy));
+        int nextX = Math.max(0, Math.min(edu.hitsz.application.Main.WINDOW_WIDTH, getLocationX() + dx));
+        int nextY = Math.max(0, Math.min(edu.hitsz.application.Main.WINDOW_HEIGHT, getLocationY() + dy));
         setLocation(nextX, nextY);
-    }
-
-    public void activateFire(int bulletAdd, int rowAdd, int powerAdd) {
-        bulletsPerRow = Math.min(BULLETS_PER_ROW_LIMIT, bulletsPerRow + bulletAdd);
-        shootRows = Math.min(SHOOT_ROWS_LIMIT, shootRows + rowAdd);
-        power = Math.min(POWER_LIMIT, power + powerAdd);
     }
 
     public void activateHoming(int duration) {
@@ -116,6 +95,52 @@ public class HeroAircraft extends AbstractAircraft implements Crashable {
 
     public void reduceFreezeDuration(int delta) {
         freezeDuration = Math.max(0, freezeDuration - delta);
+    }
+
+    public void activateScatterShoot(int duration) {
+        scatterShootDuration = Math.max(scatterShootDuration, duration);
+        refreshShootStrategy();
+    }
+
+    public void activateCircleShoot(int duration) {
+        circleShootDuration = Math.max(circleShootDuration, duration);
+        refreshShootStrategy();
+    }
+
+    public void reduceScatterShootDuration(int delta) {
+        scatterShootDuration = Math.max(0, scatterShootDuration - delta);
+        refreshShootStrategy();
+    }
+
+    public void reduceCircleShootDuration(int delta) {
+        circleShootDuration = Math.max(0, circleShootDuration - delta);
+        refreshShootStrategy();
+    }
+
+    public boolean isScatterShootActive() {
+        return scatterShootDuration > 0;
+    }
+
+    public boolean isCircleShootActive() {
+        return circleShootDuration > 0;
+    }
+
+    public String getShootModeName() {
+        if (isCircleShootActive()) {
+            return "RING";
+        }
+        if (isScatterShootActive()) {
+            return "SCATTER";
+        }
+        return "DIRECT";
+    }
+
+    public int getPower() {
+        return power;
+    }
+
+    public void increasePower(int powerAdd) {
+        power = Math.min(POWER_LIMIT, power + powerAdd);
     }
 
     public boolean activateDodge() {
@@ -157,5 +182,17 @@ public class HeroAircraft extends AbstractAircraft implements Crashable {
 
     public int getRenderHeight() {
         return HERO_RENDER_HEIGHT;
+    }
+
+    private void refreshShootStrategy() {
+        if (circleShootDuration > 0) {
+            shootStrategy = circleShootStrategy;
+            return;
+        }
+        if (scatterShootDuration > 0) {
+            shootStrategy = scatterShootStrategy;
+            return;
+        }
+        shootStrategy = directShootStrategy;
     }
 }

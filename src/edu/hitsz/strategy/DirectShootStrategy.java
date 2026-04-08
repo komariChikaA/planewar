@@ -9,15 +9,15 @@ import edu.hitsz.bullet.HeroBullet;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ScatterShootStrategy implements ShootStrategy {
+public class DirectShootStrategy implements ShootStrategy {
 
-    private final int[] speedXs;
+    private final int[] xOffsets;
     private final int bulletOffsetY;
     private final int bulletSpeedY;
     private final int bulletPower;
 
-    public ScatterShootStrategy(int[] speedXs, int bulletOffsetY, int bulletSpeedY, int bulletPower) {
-        this.speedXs = speedXs;
+    public DirectShootStrategy(int[] xOffsets, int bulletOffsetY, int bulletSpeedY, int bulletPower) {
+        this.xOffsets = xOffsets;
         this.bulletOffsetY = bulletOffsetY;
         this.bulletSpeedY = bulletSpeedY;
         this.bulletPower = bulletPower;
@@ -30,21 +30,21 @@ public class ScatterShootStrategy implements ShootStrategy {
         int power = heroAircraft ? ((HeroAircraft) aircraft).getPower() : bulletPower;
         boolean homing = heroAircraft && ((HeroAircraft) aircraft).isHomingActive();
 
-        for (int speedX : speedXs) {
+        for (int xOffset : xOffsets) {
             if (heroAircraft) {
                 bullets.add(new HeroBullet(
-                        aircraft.getLocationX() + speedX * 10,
+                        aircraft.getLocationX() + xOffset,
                         aircraft.getLocationY() + bulletOffsetY,
-                        speedX,
+                        0,
                         bulletSpeedY,
                         power,
                         homing
                 ));
             } else {
                 bullets.add(new EnemyBullet(
-                        aircraft.getLocationX() + speedX * 10,
+                        aircraft.getLocationX() + xOffset,
                         aircraft.getLocationY() + bulletOffsetY,
-                        speedX,
+                        0,
                         bulletSpeedY,
                         power
                 ));

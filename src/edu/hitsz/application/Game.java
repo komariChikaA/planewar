@@ -12,7 +12,6 @@ import edu.hitsz.bullet.BaseBullet;
 import edu.hitsz.bullet.HeroBullet;
 import edu.hitsz.factory.EnemySimpleFactory;
 import edu.hitsz.factory.SupplySimpleFactory;
-import edu.hitsz.factory.SupplyType;
 import edu.hitsz.supply.AbstractSupply;
 
 import javax.swing.JPanel;
@@ -34,12 +33,6 @@ public class Game extends JPanel {
 
     private static final int FREEZE_MOVE_DIVISOR = 3;
     private static final int BOSS_TRIGGER_SCORE = 3000;
-    private static final SupplyType[] ELITE_SUPPLIES = {
-            SupplyType.BLOOD, SupplyType.FIRE, SupplyType.FIRE_PLUS, SupplyType.BOMB
-    };
-    private static final SupplyType[] PRO_SUPPLIES = {
-            SupplyType.BLOOD, SupplyType.FIRE, SupplyType.FIRE_PLUS, SupplyType.BOMB, SupplyType.FREEZE
-    };
     private final Random random = new Random();
     private int backGroundTop = 0;
     private int time = 0;
@@ -115,6 +108,12 @@ public class Game extends JPanel {
         }
         if (heroAircraft.isHomingActive()) {
             heroAircraft.reduceHomingDuration(1);
+        }
+        if (heroAircraft.isScatterShootActive()) {
+            heroAircraft.reduceScatterShootDuration(1);
+        }
+        if (heroAircraft.isCircleShootActive()) {
+            heroAircraft.reduceCircleShootDuration(1);
         }
         if (heroAircraft.isDodging()) {
             heroAircraft.reduceDodgeDuration(1);
@@ -304,15 +303,10 @@ public class Game extends JPanel {
     }
 
     private void maybeGenerateSupply(AbstractAircraft enemyAircraft) {
-        SupplyType[] supplyPool = supplyPoolFor(enemyAircraft);
-        if (supplyPool.length > 0) {
-            dropRandomSupply(enemyAircraft.getLocationX(), enemyAircraft.getLocationY(), supplyPool);
+        AbstractSupply supply = SupplySimpleFactory.createSupplyForEnemy(enemyAircraft);
+        if (supply != null) {
+            supplies.add(supply);
         }
-    }
-
-    private void dropRandomSupply(int locationX, int locationY, SupplyType... supplyTypes) {
-        SupplyType supplyType = supplyTypes[random.nextInt(supplyTypes.length)];
-        supplies.add(SupplySimpleFactory.createSupply(supplyType, locationX, locationY));
     }
 
     private boolean canEnemyShoot(AbstractAircraft enemyAircraft) {
@@ -320,16 +314,6 @@ public class Game extends JPanel {
                 || enemyAircraft instanceof ElitePlusEnemy
                 || enemyAircraft instanceof EliteProEnemy
                 || enemyAircraft instanceof BossEnemy;
-    }
-
-    private SupplyType[] supplyPoolFor(AbstractAircraft enemyAircraft) {
-        if (enemyAircraft instanceof EliteEnemy) {
-            return ELITE_SUPPLIES;
-        }
-        if (enemyAircraft instanceof EliteProEnemy || enemyAircraft instanceof BossEnemy) {
-            return PRO_SUPPLIES;
-        }
-        return new SupplyType[0];
     }
 
     public void activateBomb() {
@@ -498,6 +482,10 @@ public class Game extends JPanel {
         if (heroAircraft.isHomingActive()) {
             y += 20;
             g.drawString("HOMING", x, y);
+        }
+        if (heroAircraft.isCircleShootActive() || heroAircraft.isScatterShootActive()) {
+            y += 20;
+            g.drawString("SHOT: " + heroAircraft.getShootModeName(), x, y);
         }
         if (heroAircraft.isDodging()) {
             y += 20;

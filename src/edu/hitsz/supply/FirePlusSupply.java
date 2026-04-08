@@ -5,7 +5,7 @@ import edu.hitsz.application.Game;
 
 public class FirePlusSupply extends AbstractSupply {
 
-    private static final int HOMING_DURATION = 300;
+    private static final int SHOOT_MODE_DURATION = 500;
 
     public FirePlusSupply(int locationX, int locationY, int speedX, int speedY) {
         super(locationX, locationY, speedX, speedY);
@@ -13,7 +13,7 @@ public class FirePlusSupply extends AbstractSupply {
 
     @Override
     public void effect(HeroAircraft heroAircraft, Game game) {
-        heroAircraft.activateHoming(HOMING_DURATION);
+        heroAircraft.activateCircleShoot(SHOOT_MODE_DURATION);
         System.out.println("FirePlusSupply active!");
         vanish();
     }

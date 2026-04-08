@@ -1,102 +1,201 @@
 @startuml
-title Aircraft War Design Patterns
+'https://plantuml.com/class-diagram
 
-left to right direction
-skinparam backgroundColor #FAFAF7
-skinparam shadowing false
-skinparam roundcorner 12
-skinparam packageStyle rectangle
-skinparam classAttributeIconSize 0
-hide empty members
+abstract class AbstractFlyingObject
+{
+    # locationX:int
+    # locationY:int
+    # speedX:int
+    # speedY:int
+    # image:BufferedImage
+    # width:int
+    # height:int
+    # isValid:boolean
 
-skinparam package {
-    BackgroundColor #FFFDF5
-    BorderColor #C9B98F
+    + AbstractFlyingObject(int locationX, int locationY, int speedX, int speedY)
+    + forward():void
+    + crash(AbstractFlyingObject flyingObject):boolean
+    + setLocation(double locationX, double locationY):void
+    + getLocationX():int
+    + getLocationY():int
+    + getSpeedY():int
+    + getImage():BufferedImage
+    + getWidth():int
+    + getHeight():int
+    + vanish():void
+    + notValid():boolean
 }
 
-skinparam class {
-    BackgroundColor #FFF8E7
-    BorderColor #7A6A43
-    ArrowColor #5D6B75
-    FontColor #2F2A22
+abstract class AbstractAircraft
+{
+    # maxHp:int
+    # hp:int
+
+    + AbstractAircraft(int locationX, int locationY, int speedX, int speedY, int hp)
+    + decreaseHp(int decrease):void
+    + increaseHp(int add):void
+    + getHp():int
+    + getMaxHp():int
+    + isAlive():boolean
+    + {abstract} shoot()
 }
 
-skinparam interface {
-    BackgroundColor #EEF6F7
-    BorderColor #5D8A90
+abstract class EnemyAircraft
+{
+    - shootStrategy:ShootStrategy
+    - defeatRewardGranted:boolean
+
+    + EnemyAircraft(int locationX, int locationY, int speedX, int speedY, int hp)
+    + setShootStrategy(ShootStrategy shootStrategy):void
+    + grantDefeatReward():boolean
+    + forward():void
+    + shoot()
 }
 
-skinparam enum {
-    BackgroundColor #F4F1FB
-    BorderColor #7B6D9C
+class HeroAircraft
+{
+    - power:int
+    - freezeDuration:int
+    - homingDuration:int
+    - dodgeDuration:int
+    - dodgeCooldown:int
+    - scatterShootDuration:int
+    - circleShootDuration:int
+    - shootStrategy:ShootStrategy
+    - {static} instance:HeroAircraft
+
+    - HeroAircraft(int locationX, int locationY, int speedX, int speedY, int hp)
+    + {static} getInstance(int locationX, int locationY, int speedX, int speedY, int hp):HeroAircraft
+    + {static} resetInstance():void
+    + forward():void
+    + shoot()
 }
 
-package "application" {
-    class Game
+class MobEnemy
+{
+    + MobEnemy(int locationX, int locationY, int speedX, int speedY, int hp)
 }
 
-package "factory" {
-    class EnemySimpleFactory {
-        + createEnemy(...)
-        + createBoss()
-    }
-
-    abstract class EnemyFactory {
-        + createEnemy(...)
-    }
-
-    class MobEnemyFactory
-    class EliteEnemyFactory
-    class ElitePlusEnemyFactory
-    class EliteProEnemyFactory
-    class BossEnemyFactory
-
-    class SupplySimpleFactory {
-        + createRandomSupply(...)
-        + createSupply(type, ...)
-    }
-
-    enum SupplyType {
-        BLOOD
-        FIRE
-        FIRE_PLUS
-        BOMB
-        FREEZE
-    }
+class EliteEnemy
+{
+    + EliteEnemy(int locationX, int locationY, int speedX, int speedY, int hp)
 }
 
-package "strategy" {
-    interface ShootStrategy {
-        + shoot(aircraft)
-    }
-
-    class NoShootStrategy
-    class ParallelShootStrategy
-    class ScatterShootStrategy
+class ElitePlusEnemy
+{
+    + ElitePlusEnemy(int locationX, int locationY, int speedX, int speedY, int hp)
 }
 
-package "domain" {
-    abstract class EnemyAircraft {
-        - shootStrategy: ShootStrategy
-        + setShootStrategy(strategy)
-        + shoot()
-    }
-
-    class MobEnemy
-    class EliteEnemy
-    class ElitePlusEnemy
-    class EliteProEnemy
-    class BossEnemy
-
-    abstract class AbstractSupply
+class EliteProEnemy
+{
+    + EliteProEnemy(int locationX, int locationY, int speedX, int speedY, int hp)
 }
 
-Game --> EnemySimpleFactory
-Game --> SupplySimpleFactory
+class BossEnemy
+{
+    + BossEnemy(int locationX, int locationY, int speedX, int speedY, int hp)
+}
 
-EnemySimpleFactory --> EnemyFactory
-SupplySimpleFactory --> SupplyType
-SupplySimpleFactory --> AbstractSupply
+abstract class BaseBullet
+{
+    - power:int
+
+    + BaseBullet(int locationX, int locationY, int speedX, int speedY, int power)
+    + forward():void
+    + getPower():int
+}
+
+class HeroBullet
+{
+    - homing:boolean
+
+    + HeroBullet(int locationX, int locationY, int speedX, int speedY, int power, boolean homing)
+    + isHoming():boolean
+    + trackTarget(AbstractAircraft target):void
+}
+
+class EnemyBullet
+{
+    + EnemyBullet(int locationX, int locationY, int speedX, int speedY, int power)
+}
+
+abstract class AbstractSupply
+{
+    + AbstractSupply(int locationX, int locationY, int speedX, int speedY)
+    + forward():void
+    + {abstract} effect(HeroAircraft heroAircraft, Game game):void
+}
+
+class BloodSupply
+{
+    + BloodSupply(int locationX, int locationY, int speedX, int speedY)
+    + effect(HeroAircraft heroAircraft, Game game):void
+}
+
+class BombSupply
+{
+    + BombSupply(int locationX, int locationY, int speedX, int speedY)
+    + effect(HeroAircraft heroAircraft, Game game):void
+}
+
+class FireSupply
+{
+    + FireSupply(int locationX, int locationY, int speedX, int speedY)
+    + effect(HeroAircraft heroAircraft, Game game):void
+}
+
+class FirePlusSupply
+{
+    + FirePlusSupply(int locationX, int locationY, int speedX, int speedY)
+    + effect(HeroAircraft heroAircraft, Game game):void
+}
+
+class FreezeSupply
+{
+    + FreezeSupply(int locationX, int locationY, int speedX, int speedY)
+    + effect(HeroAircraft heroAircraft, Game game):void
+}
+
+abstract class EnemyFactory
+{
+    + {abstract} createEnemy(int locationX, int locationY, int speedX, int speedY, int hp):EnemyAircraft
+}
+
+class MobEnemyFactory
+class EliteEnemyFactory
+class ElitePlusEnemyFactory
+class EliteProEnemyFactory
+class BossEnemyFactory
+
+interface ShootStrategy
+class NoShootStrategy
+class DirectShootStrategy
+class ParallelShootStrategy
+class ScatterShootStrategy
+class CircleShootStrategy
+
+interface Crashable
+
+AbstractFlyingObject <|-- AbstractAircraft
+AbstractFlyingObject <|-- BaseBullet
+AbstractFlyingObject <|-- AbstractSupply
+
+AbstractAircraft <|-- EnemyAircraft
+AbstractAircraft <|-- HeroAircraft
+EnemyAircraft <|-- MobEnemy
+EnemyAircraft <|-- EliteEnemy
+EnemyAircraft <|-- ElitePlusEnemy
+EnemyAircraft <|-- EliteProEnemy
+EnemyAircraft <|-- BossEnemy
+
+BaseBullet <|-- HeroBullet
+BaseBullet <|-- EnemyBullet
+
+AbstractSupply <|-- BloodSupply
+AbstractSupply <|-- BombSupply
+AbstractSupply <|-- FireSupply
+AbstractSupply <|-- FirePlusSupply
+AbstractSupply <|-- FreezeSupply
 
 EnemyFactory <|-- MobEnemyFactory
 EnemyFactory <|-- EliteEnemyFactory
@@ -104,27 +203,12 @@ EnemyFactory <|-- ElitePlusEnemyFactory
 EnemyFactory <|-- EliteProEnemyFactory
 EnemyFactory <|-- BossEnemyFactory
 
-EnemyAircraft <|-- MobEnemy
-EnemyAircraft <|-- EliteEnemy
-EnemyAircraft <|-- ElitePlusEnemy
-EnemyAircraft <|-- EliteProEnemy
-EnemyAircraft <|-- BossEnemy
-
-EnemyAircraft --> ShootStrategy
 ShootStrategy <|.. NoShootStrategy
+ShootStrategy <|.. DirectShootStrategy
 ShootStrategy <|.. ParallelShootStrategy
 ShootStrategy <|.. ScatterShootStrategy
+ShootStrategy <|.. CircleShootStrategy
 
-MobEnemyFactory --> MobEnemy
-EliteEnemyFactory --> EliteEnemy
-ElitePlusEnemyFactory --> ElitePlusEnemy
-EliteProEnemyFactory --> EliteProEnemy
-BossEnemyFactory --> BossEnemy
-
-MobEnemyFactory --> NoShootStrategy
-EliteEnemyFactory --> ParallelShootStrategy
-ElitePlusEnemyFactory --> ScatterShootStrategy
-EliteProEnemyFactory --> ScatterShootStrategy
-BossEnemyFactory --> ScatterShootStrategy
+Crashable <|.. HeroAircraft
 
 @enduml
