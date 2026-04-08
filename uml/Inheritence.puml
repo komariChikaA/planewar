@@ -1,0 +1,130 @@
+@startuml
+title Aircraft War Design Patterns
+
+left to right direction
+skinparam backgroundColor #FAFAF7
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+hide empty members
+
+skinparam package {
+    BackgroundColor #FFFDF5
+    BorderColor #C9B98F
+}
+
+skinparam class {
+    BackgroundColor #FFF8E7
+    BorderColor #7A6A43
+    ArrowColor #5D6B75
+    FontColor #2F2A22
+}
+
+skinparam interface {
+    BackgroundColor #EEF6F7
+    BorderColor #5D8A90
+}
+
+skinparam enum {
+    BackgroundColor #F4F1FB
+    BorderColor #7B6D9C
+}
+
+package "application" {
+    class Game
+}
+
+package "factory" {
+    class EnemySimpleFactory {
+        + createEnemy(...)
+        + createBoss()
+    }
+
+    abstract class EnemyFactory {
+        + createEnemy(...)
+    }
+
+    class MobEnemyFactory
+    class EliteEnemyFactory
+    class ElitePlusEnemyFactory
+    class EliteProEnemyFactory
+    class BossEnemyFactory
+
+    class SupplySimpleFactory {
+        + createRandomSupply(...)
+        + createSupply(type, ...)
+    }
+
+    enum SupplyType {
+        BLOOD
+        FIRE
+        FIRE_PLUS
+        BOMB
+        FREEZE
+    }
+}
+
+package "strategy" {
+    interface ShootStrategy {
+        + shoot(aircraft)
+    }
+
+    class NoShootStrategy
+    class ParallelShootStrategy
+    class ScatterShootStrategy
+}
+
+package "domain" {
+    abstract class EnemyAircraft {
+        - shootStrategy: ShootStrategy
+        + setShootStrategy(strategy)
+        + shoot()
+    }
+
+    class MobEnemy
+    class EliteEnemy
+    class ElitePlusEnemy
+    class EliteProEnemy
+    class BossEnemy
+
+    abstract class AbstractSupply
+}
+
+Game --> EnemySimpleFactory
+Game --> SupplySimpleFactory
+
+EnemySimpleFactory --> EnemyFactory
+SupplySimpleFactory --> SupplyType
+SupplySimpleFactory --> AbstractSupply
+
+EnemyFactory <|-- MobEnemyFactory
+EnemyFactory <|-- EliteEnemyFactory
+EnemyFactory <|-- ElitePlusEnemyFactory
+EnemyFactory <|-- EliteProEnemyFactory
+EnemyFactory <|-- BossEnemyFactory
+
+EnemyAircraft <|-- MobEnemy
+EnemyAircraft <|-- EliteEnemy
+EnemyAircraft <|-- ElitePlusEnemy
+EnemyAircraft <|-- EliteProEnemy
+EnemyAircraft <|-- BossEnemy
+
+EnemyAircraft --> ShootStrategy
+ShootStrategy <|.. NoShootStrategy
+ShootStrategy <|.. ParallelShootStrategy
+ShootStrategy <|.. ScatterShootStrategy
+
+MobEnemyFactory --> MobEnemy
+EliteEnemyFactory --> EliteEnemy
+ElitePlusEnemyFactory --> ElitePlusEnemy
+EliteProEnemyFactory --> EliteProEnemy
+BossEnemyFactory --> BossEnemy
+
+MobEnemyFactory --> NoShootStrategy
+EliteEnemyFactory --> ParallelShootStrategy
+ElitePlusEnemyFactory --> ScatterShootStrategy
+EliteProEnemyFactory --> ScatterShootStrategy
+BossEnemyFactory --> ScatterShootStrategy
+
+@enduml
