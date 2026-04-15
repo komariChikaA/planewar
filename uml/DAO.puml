@@ -1,0 +1,63 @@
+@startuml
+title Leaderboard DAO Pattern
+
+left to right direction
+skinparam backgroundColor #FAFAF7
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+hide empty members
+
+skinparam package {
+    BackgroundColor #FFFDF5
+    BorderColor #C9B98F
+}
+
+skinparam class {
+    BackgroundColor #FFF8E7
+    BorderColor #7A6A43
+    ArrowColor #5D6B75
+    FontColor #2F2A22
+}
+
+package "application" {
+    class Game <<Client>>
+    class LeaderboardDialog <<Boundary>>
+}
+
+package "dao" {
+    interface LeaderboardDao <<DAO>> {
+        + insert(scoreRecord: ScoreRecord): void
+        + findAll(): List<ScoreRecord>
+    }
+
+    class FileLeaderboardDao <<ConcreteDAO>> {
+        - storagePath: Path
+        + insert(scoreRecord: ScoreRecord): void
+        + findAll(): List<ScoreRecord>
+    }
+}
+
+package "model" {
+    class ScoreRecord <<Entity>> {
+        - playerName: String
+        - score: int
+        - playedAt: LocalDateTime
+    }
+}
+
+Game --> LeaderboardDao : uses
+Game ..> LeaderboardDialog : displays
+LeaderboardDialog --> ScoreRecord : shows
+LeaderboardDao <|.. FileLeaderboardDao
+LeaderboardDao --> ScoreRecord : persists
+FileLeaderboardDao *-- ScoreRecord : stores/loads
+
+note right of FileLeaderboardDao
+Persist leaderboard records
+to local file:
+data/leaderboard.txt
+end note
+
+@enduml

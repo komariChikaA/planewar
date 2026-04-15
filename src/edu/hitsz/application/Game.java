@@ -10,8 +10,11 @@ import edu.hitsz.aircraft.HeroAircraft;
 import edu.hitsz.basic.AbstractFlyingObject;
 import edu.hitsz.bullet.BaseBullet;
 import edu.hitsz.bullet.HeroBullet;
+import edu.hitsz.dao.FileLeaderboardDao;
+import edu.hitsz.dao.LeaderboardDao;
 import edu.hitsz.factory.EnemySimpleFactory;
 import edu.hitsz.factory.SupplySimpleFactory;
+import edu.hitsz.model.ScoreRecord;
 import edu.hitsz.supply.AbstractSupply;
 
 import javax.swing.JPanel;
@@ -22,7 +25,10 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Window;
 import java.awt.image.BufferedImage;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -33,11 +39,16 @@ public class Game extends JPanel {
 
     private static final int FREEZE_MOVE_DIVISOR = 3;
     private static final int BOSS_TRIGGER_SCORE = 3000;
+    private static final String DEFAULT_PLAYER_NAME = "GithubKomariChikaA";
     private final Random random = new Random();
+    private final boolean audioEnabled;
+    private final boolean resultPresentationEnabled;
+    private final GameDifficulty difficulty;
     private int backGroundTop = 0;
     private int time = 0;
     private final Timer timer;
     private final int timeInterval = 40;
+    private final LeaderboardDao leaderboardDao;
 
     private final HeroAircraft heroAircraft;
     private final HeroController heroController;
@@ -54,17 +65,23 @@ public class Game extends JPanel {
     private int score = 0;
     private boolean gameOverFlag = false;
     private boolean gameClearFlag = false;
+    private boolean leaderboardHandled = false;
     private boolean bossSpawned = false;
     private int heroTrailX;
     private int heroTrailY;
 
-    public Game() {
+    public Game(GameDifficulty difficulty) {
+        this(difficulty, new FileLeaderboardDao(Paths.get("data", "leaderboard.txt")), true, true);
+    }
+
+    Game(GameDifficulty difficulty, LeaderboardDao leaderboardDao, boolean audioEnabled, boolean resultPresentationEnabled) {
+        this.difficulty = difficulty;
         heroAircraft = HeroAircraft.getInstance(
                 Main.WINDOW_WIDTH / 2,
                 Main.WINDOW_HEIGHT - ImageManager.HERO_IMAGE.getHeight(),
                 0,
                 0,
-                100
+                difficulty.getHeroInitialHp()
         );
 
         enemyAircrafts = new LinkedList<>();
@@ -75,8 +92,13 @@ public class Game extends JPanel {
         heroController = new HeroController(this, heroAircraft);
         heroTrailX = heroAircraft.getLocationX();
         heroTrailY = heroAircraft.getLocationY();
+        this.leaderboardDao = leaderboardDao;
+        this.audioEnabled = audioEnabled;
+        this.resultPresentationEnabled = resultPresentationEnabled;
         this.timer = new Timer("game-action-timer", true);
-        SoundManager.playBgm();
+        if (audioEnabled) {
+            SoundManager.playBgm();
+        }
     }
 
     public void action() {
@@ -141,13 +163,15 @@ public class Game extends JPanel {
 
         if (!bossSpawned && score >= BOSS_TRIGGER_SCORE) {
             bossSpawned = true;
-            enemyAircrafts.add(EnemySimpleFactory.createBoss());
-            SoundManager.playBossBgm();
+            enemyAircrafts.add(EnemySimpleFactory.createBoss(difficulty));
+            if (audioEnabled) {
+                SoundManager.playBossBgm();
+            }
             return;
         }
 
         if (enemyAircrafts.size() < enemyMaxNumber) {
-            enemyAircrafts.add(EnemySimpleFactory.createEnemy(time, hasActiveBoss()));
+            enemyAircrafts.add(EnemySimpleFactory.createEnemy(time, hasActiveBoss(), difficulty));
         }
     }
 
@@ -318,7 +342,9 @@ public class Game extends JPanel {
 
     public void activateBomb() {
         boolean clearedBoss = false;
-        SoundManager.playBombExplosion();
+        if (audioEnabled) {
+            SoundManager.playBombExplosion();
+        }
         for (AbstractAircraft enemyAircraft : enemyAircrafts) {
             if (!enemyAircraft.notValid() && !(enemyAircraft instanceof BossEnemy)) {
                 enemyAircraft.decreaseHp(Integer.MAX_VALUE);
@@ -331,12 +357,7 @@ public class Game extends JPanel {
     }
 
     private void triggerGameClear() {
-        gameClearFlag = true;
-        timer.cancel();
-        SoundManager.stopBossBgm();
-        SoundManager.stopBgm();
-        repaint();
-        System.out.println("Victory!");
+        finishGame(true);
     }
 
     private void postProcessAction() {
@@ -347,22 +368,96 @@ public class Game extends JPanel {
     }
 
     private void checkResultAction() {
-        if (heroAircraft.getHp() <= 0) {
-            timer.cancel();
-            gameOverFlag = true;
-            SoundManager.playGameOver();
-            System.out.println("Game Over!");
+        if (heroAircraft.getHp() <= 0 && !gameOverFlag && !gameClearFlag) {
+            finishGame(false);
         }
     }
 
     public void tryRestart() {
-        if (!gameOverFlag) {
+        if (!gameOverFlag && !gameClearFlag) {
             return;
         }
+        restartGame();
+    }
+
+    private void finishGame(boolean victory) {
+        if (leaderboardHandled) {
+            return;
+        }
+        leaderboardHandled = true;
+        gameClearFlag = victory;
+        gameOverFlag = !victory;
+        timer.cancel();
+        if (audioEnabled) {
+            if (victory) {
+                SoundManager.stopBossBgm();
+                SoundManager.stopBgm();
+            } else {
+                SoundManager.playGameOver();
+            }
+        }
+        if (victory) {
+            System.out.println("Victory!");
+        } else {
+            System.out.println("Game Over!");
+        }
+        repaint();
+        if (resultPresentationEnabled) {
+            persistAndShowLeaderboard(victory);
+        }
+    }
+
+    private void persistAndShowLeaderboard(boolean victory) {
+        ScoreRecord currentRecord = new ScoreRecord(
+                difficulty.getDisplayName(),
+                DEFAULT_PLAYER_NAME,
+                score,
+                LocalDateTime.now()
+        );
+        List<ScoreRecord> records = new LinkedList<>();
+        try {
+            leaderboardDao.insert(currentRecord);
+            records.addAll(leaderboardDao.findAll());
+        } catch (RuntimeException exception) {
+            exception.printStackTrace();
+            records.add(currentRecord);
+        }
+        printLeaderboardToConsole(records);
+
+        final List<ScoreRecord> latestRecords = records;
+        final String resultText = victory ? "YOU WIN" : "GAME OVER";
+        SwingUtilities.invokeLater(() -> {
+            Window owner = SwingUtilities.getWindowAncestor(this);
+            LeaderboardDialog leaderboardDialog =
+                    new LeaderboardDialog(owner, resultText, latestRecords, this::restartGame);
+            leaderboardDialog.setVisible(true);
+            requestFocusInWindow();
+        });
+    }
+
+    private void printLeaderboardToConsole(List<ScoreRecord> records) {
+        System.out.println("===== Total Leaderboard =====");
+        System.out.printf("%-4s %-12s %-24s %-8s %-19s%n", "Rank", "Difficulty", "Player", "Score", "Time");
+        for (int i = 0; i < records.size(); i++) {
+            ScoreRecord record = records.get(i);
+            System.out.printf(
+                    "%-4d %-12s %-24s %-8d %-19s%n",
+                    i + 1,
+                    record.getDifficulty(),
+                    record.getPlayerName(),
+                    record.getScore(),
+                    record.formatPlayedAt()
+            );
+        }
+        System.out.println("=============================");
+    }
+
+    private void restartGame() {
         SoundManager.stopBgm();
         SoundManager.stopBossBgm();
         HeroAircraft.resetInstance();
-        Game newGame = new Game();
+        GameDifficulty nextDifficulty = GameDifficulty.select(SwingUtilities.getWindowAncestor(this));
+        Game newGame = new Game(nextDifficulty);
         Container container = SwingUtilities.getWindowAncestor(this);
         if (container != null) {
             container.remove(this);
@@ -372,6 +467,18 @@ public class Game extends JPanel {
             newGame.requestFocusInWindow();
             newGame.action();
         }
+    }
+
+    HeroAircraft getHeroAircraftForTest() {
+        return heroAircraft;
+    }
+
+    void evaluateGameResultForTest() {
+        checkResultAction();
+    }
+
+    boolean isGameOverForTest() {
+        return gameOverFlag;
     }
 
     @Override

@@ -7,9 +7,9 @@ import edu.hitsz.strategy.ParallelShootStrategy;
 public class ElitePlusEnemyFactory extends EnemyFactory {
 
     @Override
-    public EnemyAircraft createEnemy(int locationX, int locationY, int speedX, int speedY, int hp) {
+    public EnemyAircraft createEnemy(int locationX, int locationY, int speedX, int speedY, int hp, int bulletPower) {
         EnemyAircraft enemyAircraft = new ElitePlusEnemy(locationX, locationY, speedX, speedY, hp);
-        enemyAircraft.setShootStrategy(new ParallelShootStrategy(new int[]{-12, 12}, 3, 7, 18));
+        enemyAircraft.setShootStrategy(new ParallelShootStrategy(new int[]{-12, 12}, 3, 7, bulletPower));
         return enemyAircraft;
     }
 }

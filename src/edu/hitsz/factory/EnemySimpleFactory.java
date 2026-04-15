@@ -1,6 +1,7 @@
 package edu.hitsz.factory;
 
 import edu.hitsz.aircraft.EnemyAircraft;
+import edu.hitsz.application.GameDifficulty;
 import edu.hitsz.application.Main;
 
 import java.util.Random;
@@ -20,17 +21,32 @@ public class EnemySimpleFactory {
     private EnemySimpleFactory() {
     }
 
-    public static EnemyAircraft createBoss() {
-        return BOSS_FACTORY.createEnemy(Main.WINDOW_WIDTH / 2, 0, 3, 0, BOSS_HP);
+    public static EnemyAircraft createBoss(GameDifficulty difficulty) {
+        int speedX = difficulty.isBossMovable() ? 3 : 0;
+        return BOSS_FACTORY.createEnemy(
+                Main.WINDOW_WIDTH / 2,
+                0,
+                speedX,
+                0,
+                difficulty.scaleEnemyHp(BOSS_HP),
+                difficulty.scaleEnemyBulletPower(22)
+        );
     }
 
-    public static EnemyAircraft createEnemy(int gameTime, boolean bossPresent) {
+    public static EnemyAircraft createEnemy(int gameTime, boolean bossPresent, GameDifficulty difficulty) {
         int type = RANDOM.nextInt(100);
         int locationX = RANDOM.nextInt(Main.WINDOW_WIDTH);
         int hpMultiplier = 1 << Math.min(10, gameTime / HP_DOUBLE_INTERVAL);
 
         EnemyFactory factory = selectFactory(type, bossPresent);
-        return factory.createEnemy(locationX, 0, 0, speedFor(factory), hpFor(factory, hpMultiplier));
+        return factory.createEnemy(
+                locationX,
+                0,
+                0,
+                difficulty.scaleEnemySpeed(speedFor(factory)),
+                difficulty.scaleEnemyHp(hpFor(factory, hpMultiplier)),
+                bulletPowerFor(factory, difficulty)
+        );
     }
 
     private static EnemyFactory selectFactory(int type, boolean bossPresent) {
@@ -80,5 +96,18 @@ public class EnemySimpleFactory {
             return 100 * hpMultiplier;
         }
         return 30 * hpMultiplier;
+    }
+
+    private static int bulletPowerFor(EnemyFactory factory, GameDifficulty difficulty) {
+        if (factory instanceof EliteEnemyFactory) {
+            return difficulty.scaleEnemyBulletPower(16);
+        }
+        if (factory instanceof ElitePlusEnemyFactory) {
+            return difficulty.scaleEnemyBulletPower(18);
+        }
+        if (factory instanceof EliteProEnemyFactory) {
+            return difficulty.scaleEnemyBulletPower(20);
+        }
+        return 0;
     }
 }

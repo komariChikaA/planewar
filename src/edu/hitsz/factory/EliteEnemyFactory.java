@@ -7,9 +7,9 @@ import edu.hitsz.strategy.DirectShootStrategy;
 public class EliteEnemyFactory extends EnemyFactory {
 
     @Override
-    public EnemyAircraft createEnemy(int locationX, int locationY, int speedX, int speedY, int hp) {
+    public EnemyAircraft createEnemy(int locationX, int locationY, int speedX, int speedY, int hp, int bulletPower) {
         EnemyAircraft enemyAircraft = new EliteEnemy(locationX, locationY, speedX, speedY, hp);
-        enemyAircraft.setShootStrategy(new DirectShootStrategy(new int[]{0}, 2, 5, 16));
+        enemyAircraft.setShootStrategy(new DirectShootStrategy(new int[]{0}, 2, 5, bulletPower));
         return enemyAircraft;
     }
 }
