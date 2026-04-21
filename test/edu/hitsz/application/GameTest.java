@@ -24,6 +24,11 @@ public class GameTest {
         public List<ScoreRecord> findAll() {
             return Collections.emptyList();
         }
+
+        @Override
+        public boolean delete(int index) {
+            return false;
+        }
     };
 
     @After

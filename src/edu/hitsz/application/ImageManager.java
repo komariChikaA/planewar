@@ -1,10 +1,10 @@
 package edu.hitsz.application;
 
-import edu.hitsz.aircraft.HeroAircraft;
 import edu.hitsz.aircraft.BossEnemy;
 import edu.hitsz.aircraft.EliteEnemy;
 import edu.hitsz.aircraft.ElitePlusEnemy;
 import edu.hitsz.aircraft.EliteProEnemy;
+import edu.hitsz.aircraft.HeroAircraft;
 import edu.hitsz.aircraft.MobEnemy;
 import edu.hitsz.bullet.EnemyBullet;
 import edu.hitsz.bullet.HeroBullet;
@@ -18,12 +18,15 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ImageManager {
 
     private static final Map<String, BufferedImage> CLASSNAME_IMAGE_MAP = new HashMap<>();
+    private static final Map<GameDifficulty, BufferedImage> DIFFICULTY_BACKGROUND_MAP =
+            new EnumMap<>(GameDifficulty.class);
 
     public static BufferedImage BACKGROUND_IMAGE;
     public static BufferedImage HERO_IMAGE;
@@ -42,7 +45,19 @@ public class ImageManager {
 
     static {
         try {
-            BACKGROUND_IMAGE = ImageIO.read(new FileInputStream("src/images/bg.jpg"));
+            BufferedImage easyBackground = ImageIO.read(new FileInputStream("src/images/bg.jpg"));
+            BufferedImage advancedBackground = ImageIO.read(new FileInputStream("src/images/bg2.jpg"));
+            BufferedImage expertBackground = ImageIO.read(new FileInputStream("src/images/bg3.jpg"));
+            BufferedImage masterBackground = ImageIO.read(new FileInputStream("src/images/bg4.jpg"));
+            BufferedImage reMasterBackground = ImageIO.read(new FileInputStream("src/images/bg5.jpg"));
+
+            DIFFICULTY_BACKGROUND_MAP.put(GameDifficulty.EASY, easyBackground);
+            DIFFICULTY_BACKGROUND_MAP.put(GameDifficulty.ADVANCED, advancedBackground);
+            DIFFICULTY_BACKGROUND_MAP.put(GameDifficulty.EXPERT, expertBackground);
+            DIFFICULTY_BACKGROUND_MAP.put(GameDifficulty.MASTER, masterBackground);
+            DIFFICULTY_BACKGROUND_MAP.put(GameDifficulty.RE_MASTER, reMasterBackground);
+
+            BACKGROUND_IMAGE = expertBackground;
             HERO_IMAGE = ImageIO.read(new FileInputStream("src/images/hero.png"));
             MOB_ENEMY_IMAGE = ImageIO.read(new FileInputStream("src/images/mob.png"));
             ELITE_ENEMY_IMAGE = ImageIO.read(new FileInputStream("src/images/elite.png"));
@@ -85,5 +100,9 @@ public class ImageManager {
             return null;
         }
         return get(obj.getClass().getName());
+    }
+
+    public static BufferedImage getBackgroundImage(GameDifficulty difficulty) {
+        return DIFFICULTY_BACKGROUND_MAP.getOrDefault(difficulty, BACKGROUND_IMAGE);
     }
 }

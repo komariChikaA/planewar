@@ -2,6 +2,7 @@ package edu.hitsz.model;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 
 public class ScoreRecord {
 
@@ -41,5 +42,25 @@ public class ScoreRecord {
 
     public static LocalDateTime parsePlayedAt(String value) {
         return LocalDateTime.parse(value, FORMATTER);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof ScoreRecord)) {
+            return false;
+        }
+        ScoreRecord that = (ScoreRecord) other;
+        return score == that.score
+                && Objects.equals(difficulty, that.difficulty)
+                && Objects.equals(playerName, that.playerName)
+                && Objects.equals(playedAt, that.playedAt);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(difficulty, playerName, score, playedAt);
     }
 }

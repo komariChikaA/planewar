@@ -62,13 +62,16 @@ public enum GameDifficulty {
         GameDifficulty[] options = values();
         GameDifficulty selected = (GameDifficulty) JOptionPane.showInputDialog(
                 parent,
-                "请选择难度：\n"
-                        + "EASY：Boss不动，敌机血量低、速度慢，敌机子弹伤害低\n"
-                        + "ADVANCED：Boss不动，敌机血量略高、速度慢，敌机子弹伤害低\n"
-                        + "EXPERT：Boss会移动，敌机血量和速度正常，敌机子弹伤害正常\n"
-                        + "MASTER：Boss会移动，敌机血量提升为3倍\n"
-                        + "RE:MASTER：Boss会移动，敌机血量提升为3倍，英雄机血量上限为20",
-                "飞机大战难度选择",
+                String.join(
+                        "\n",
+                        "Select difficulty:",
+                        "EASY: static boss, lower enemy HP, slower enemies, weaker bullets",
+                        "ADVANCED: static boss, slightly tougher enemies and bullets",
+                        "EXPERT: moving boss, standard enemy stats",
+                        "MASTER: moving boss, enemy HP is tripled",
+                        "RE:MASTER: MASTER rules, but hero HP is capped at 20"
+                ),
+                "Aircraft War Difficulty",
                 JOptionPane.PLAIN_MESSAGE,
                 null,
                 options,

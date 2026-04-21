@@ -110,4 +110,26 @@ public class HeroAircraftTest {
         assertEquals("RING", heroAircraft.getShootModeName());
         assertTrue(firePlusSupply.notValid());
     }
+
+    @Test
+    public void shouldReturnToDirectShootAfterFireSupplyDurationEnds() {
+        FireSupply fireSupply = new FireSupply(heroAircraft.getLocationX(), heroAircraft.getLocationY(), 0, 0);
+
+        fireSupply.effect(heroAircraft, null);
+        heroAircraft.reduceScatterShootDuration(500);
+
+        assertFalse(heroAircraft.isScatterShootActive());
+        assertEquals("DIRECT", heroAircraft.getShootModeName());
+    }
+
+    @Test
+    public void shouldReturnToDirectShootAfterFirePlusSupplyDurationEnds() {
+        FirePlusSupply firePlusSupply = new FirePlusSupply(heroAircraft.getLocationX(), heroAircraft.getLocationY(), 0, 0);
+
+        firePlusSupply.effect(heroAircraft, null);
+        heroAircraft.reduceCircleShootDuration(500);
+
+        assertFalse(heroAircraft.isCircleShootActive());
+        assertEquals("DIRECT", heroAircraft.getShootModeName());
+    }
 }

@@ -52,6 +52,17 @@ public class FileLeaderboardDao implements LeaderboardDao {
         }
     }
 
+    @Override
+    public synchronized boolean delete(int index) {
+        List<ScoreRecord> records = new ArrayList<>(findAll());
+        if (index < 0 || index >= records.size()) {
+            return false;
+        }
+        records.remove(index);
+        writeAll(records);
+        return true;
+    }
+
     private void writeAll(List<ScoreRecord> records) {
         ensureStorageFile();
         List<String> lines = new ArrayList<>();
