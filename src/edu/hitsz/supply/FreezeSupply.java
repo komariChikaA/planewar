@@ -13,7 +13,11 @@ public class FreezeSupply extends AbstractSupply {
 
     @Override
     public void effect(HeroAircraft heroAircraft, Game game) {
-        heroAircraft.activateFreeze(FREEZE_DURATION);
+        if (game == null) {
+            heroAircraft.activateFreeze(FREEZE_DURATION);
+        } else {
+            game.activateFreeze(this);
+        }
         vanish();
     }
 }

@@ -1,0 +1,70 @@
+@startuml
+title Aircraft Difficulty Template Method Pattern
+
+left to right direction
+skinparam backgroundColor #FAFAF7
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+hide empty members
+
+skinparam package {
+    BackgroundColor #FFFDF5
+    BorderColor #C9B98F
+}
+
+skinparam class {
+    BackgroundColor #FFF8E7
+    BorderColor #7A6A43
+    ArrowColor #5D6B75
+    FontColor #2F2A22
+}
+
+package "template" {
+    abstract class Game <<AbstractClass>> {
+        + final action(): void
+        # updateDifficultyAction(): void
+        # createEnemyAircraft(time, bossPresent): AbstractAircraft
+        # createBossEnemy(): AbstractAircraft
+        # canGenerateBoss(): boolean
+        # getBossTriggerScore(): int
+    }
+}
+
+package "concrete games" {
+    class EasyGame <<ConcreteClass>>
+    class NormalGame <<ConcreteClass>>
+    class HardGame <<ConcreteClass>>
+}
+
+Game <|-- EasyGame
+Game <|-- NormalGame
+Game <|-- HardGame
+
+note right of Game
+Template method action() fixes the game loop:
+status update, control, difficulty hook,
+enemy spawn, shooting, movement,
+collision, cleanup, render, result check.
+end note
+
+note bottom of EasyGame
+No boss generation.
+Difficulty remains stable.
+end note
+
+note bottom of NormalGame
+Enemy spawn cycle, speed,
+and HP increase over time.
+Boss HP stays fixed.
+end note
+
+note bottom of HardGame
+Enemy spawn cycle, speed, HP,
+hero shoot cycle and enemy shoot
+cycle all increase in pressure.
+Boss HP increases per summon.
+end note
+
+@enduml

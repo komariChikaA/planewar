@@ -1,0 +1,80 @@
+@startuml
+title Aircraft Supply Observer Pattern
+
+left to right direction
+skinparam backgroundColor #FAFAF7
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+hide empty members
+
+skinparam package {
+    BackgroundColor #FFFDF5
+    BorderColor #C9B98F
+}
+
+skinparam class {
+    BackgroundColor #FFF8E7
+    BorderColor #7A6A43
+    ArrowColor #5D6B75
+    FontColor #2F2A22
+}
+
+skinparam interface {
+    BackgroundColor #EEF6F7
+    BorderColor #5D8A90
+}
+
+package "subject" {
+    abstract class AbstractSupply <<ConcreteSubject>> {
+        - effectSubject: SupplyEffectSubject
+        + effect(heroAircraft, game): void
+    }
+
+    class SupplyEffectSubject <<Subject>> {
+        - observers: List<SupplyEffectObserver>
+        + addObserver(observer): void
+        + removeObserver(observer): void
+        + notifyBombObservers(): void
+        + notifyFreezeObservers(): void
+    }
+
+    class BombSupply <<ConcreteSubject>>
+    class FreezeSupply <<ConcreteSubject>>
+}
+
+package "observer" {
+    interface SupplyEffectObserver <<Observer>> {
+        + onBombSupply(): void
+        + onFreezeSupply(): void
+    }
+
+    abstract class EnemyAircraft <<ConcreteObserver>>
+    class BaseBullet <<ConcreteObserver>>
+}
+
+package "client" {
+    class Game <<Client>> {
+        + activateBomb(supply): void
+        + activateFreeze(supply): void
+    }
+}
+
+AbstractSupply *-- SupplyEffectSubject
+AbstractSupply <|-- BombSupply
+AbstractSupply <|-- FreezeSupply
+SupplyEffectSubject o-- SupplyEffectObserver
+SupplyEffectObserver <|.. EnemyAircraft
+SupplyEffectObserver <|.. BaseBullet
+Game ..> AbstractSupply : registers current observers
+BombSupply ..> Game : triggers bomb
+FreezeSupply ..> Game : triggers freeze
+
+note bottom
+Observer Pattern:
+BombSupply and FreezeSupply notify all registered enemies and enemy bullets.
+Each observer owns its type-specific reaction.
+end note
+
+@enduml

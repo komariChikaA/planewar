@@ -2,14 +2,20 @@ package edu.hitsz.bullet;
 
 import edu.hitsz.application.Main;
 import edu.hitsz.basic.AbstractFlyingObject;
+import edu.hitsz.observer.SupplyEffectObserver;
 
 /**
  * 子弹基类
  * @author hitsz
  */
-public abstract class BaseBullet extends AbstractFlyingObject {
+public abstract class BaseBullet extends AbstractFlyingObject implements SupplyEffectObserver {
+
+    private static final int FREEZE_DURATION = 125;
 
     private int power = 0;
+    private int freezeDuration = 0;
+    private int originalSpeedX;
+    private int originalSpeedY;
 
     public BaseBullet(int locationX, int locationY, int speedX, int speedY, int power) {
         super(locationX, locationY, speedX, speedY);
@@ -18,6 +24,14 @@ public abstract class BaseBullet extends AbstractFlyingObject {
 
     @Override
     public void forward() {
+        if (freezeDuration > 0) {
+            freezeDuration--;
+            if (freezeDuration == 0) {
+                speedX = originalSpeedX;
+                speedY = originalSpeedY;
+            }
+            return;
+        }
         super.forward();
 
         // 判定 x 轴出界
@@ -37,5 +51,21 @@ public abstract class BaseBullet extends AbstractFlyingObject {
 
     public int getPower() {
         return power;
+    }
+
+    @Override
+    public void onBombSupply() {
+        vanish();
+    }
+
+    @Override
+    public void onFreezeSupply() {
+        if (freezeDuration == 0) {
+            originalSpeedX = speedX;
+            originalSpeedY = speedY;
+            speedX = 0;
+            speedY = 0;
+        }
+        freezeDuration = Math.max(freezeDuration, FREEZE_DURATION);
     }
 }

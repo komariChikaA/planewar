@@ -11,7 +11,9 @@ public class BombSupply extends AbstractSupply {
 
     @Override
     public void effect(HeroAircraft heroAircraft, Game game) {
-        game.activateBomb();
+        if (game != null) {
+            game.activateBomb(this);
+        }
         vanish();
     }
 }

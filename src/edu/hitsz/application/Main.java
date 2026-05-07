@@ -25,7 +25,7 @@ public class Main {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         GameDifficulty difficulty = GameDifficulty.select(frame);
-        Game game = new Game(difficulty);
+        Game game = Game.create(difficulty);
         frame.add(game);
         frame.setVisible(true);
         game.requestFocusInWindow();

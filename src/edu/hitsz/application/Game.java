@@ -34,10 +34,8 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class Game extends JPanel {
+public abstract class Game extends JPanel {
 
-    private static final int FREEZE_MOVE_DIVISOR = 3;
-    private static final int BOSS_TRIGGER_SCORE = 3000;
     private final boolean audioEnabled;
     private final boolean resultPresentationEnabled;
     private final GameDifficulty difficulty;
@@ -55,10 +53,11 @@ public class Game extends JPanel {
     private final List<BaseBullet> enemyBullets;
     private final List<AbstractSupply> supplies;
 
-    private final int enemyMaxNumber = 5;
+    private final int enemyMaxNumber;
     protected double enemySpawnCycle = 20;
     private int enemySpawnCounter = 0;
-    protected double shootCycle = 6;
+    protected double heroShootCycle = 6;
+    protected double enemyShootCycle = 6;
     private int shootCounter = 0;
     private int score = 0;
     private boolean gameOverFlag = false;
@@ -72,9 +71,13 @@ public class Game extends JPanel {
         this(difficulty, new FileLeaderboardDao(Paths.get("data", "leaderboard.txt")), true, true);
     }
 
-    Game(GameDifficulty difficulty, LeaderboardDao leaderboardDao, boolean audioEnabled, boolean resultPresentationEnabled) {
+    protected Game(GameDifficulty difficulty, LeaderboardDao leaderboardDao, boolean audioEnabled, boolean resultPresentationEnabled) {
         this.difficulty = difficulty;
         this.backgroundImage = ImageManager.getBackgroundImage(difficulty);
+        this.enemyMaxNumber = getInitialEnemyMaxNumber();
+        this.enemySpawnCycle = getInitialEnemySpawnCycle();
+        this.heroShootCycle = getInitialHeroShootCycle();
+        this.enemyShootCycle = getInitialEnemyShootCycle();
         heroAircraft = HeroAircraft.getInstance(
                 Main.WINDOW_WIDTH / 2,
                 Main.WINDOW_HEIGHT - ImageManager.HERO_IMAGE.getHeight(),
@@ -100,7 +103,19 @@ public class Game extends JPanel {
         }
     }
 
-    public void action() {
+    public static Game create(GameDifficulty difficulty) {
+        switch (difficulty) {
+            case EASY:
+                return new EasyGame();
+            case HARD:
+                return new HardGame();
+            case NORMAL:
+            default:
+                return new NormalGame();
+        }
+    }
+
+    public final void action() {
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
@@ -110,6 +125,7 @@ public class Game extends JPanel {
                 time++;
                 updateHeroStatus();
                 updateHeroControl();
+                updateDifficultyAction();
                 spawnEnemyAction();
                 shootAction();
                 bulletsMoveAction();
@@ -124,9 +140,6 @@ public class Game extends JPanel {
     }
 
     private void updateHeroStatus() {
-        if (heroAircraft.isFreezeActive()) {
-            heroAircraft.reduceFreezeDuration(1);
-        }
         if (heroAircraft.isHomingActive()) {
             heroAircraft.reduceHomingDuration(1);
         }
@@ -160,9 +173,9 @@ public class Game extends JPanel {
         }
         enemySpawnCounter = 0;
 
-        if (!bossSpawned && score >= BOSS_TRIGGER_SCORE) {
+        if (canGenerateBoss() && !bossSpawned && score >= getBossTriggerScore()) {
             bossSpawned = true;
-            enemyAircrafts.add(EnemySimpleFactory.createBoss(difficulty));
+            enemyAircrafts.add(createBossEnemy());
             if (audioEnabled) {
                 SoundManager.playBossBgm();
             }
@@ -170,7 +183,7 @@ public class Game extends JPanel {
         }
 
         if (enemyAircrafts.size() < enemyMaxNumber) {
-            enemyAircrafts.add(EnemySimpleFactory.createEnemy(time, hasActiveBoss(), difficulty));
+            enemyAircrafts.add(createEnemyAircraft(time, hasActiveBoss()));
         }
     }
 
@@ -188,16 +201,13 @@ public class Game extends JPanel {
             shootCounter = 0;
         } else {
             shootCounter++;
-            if (shootCounter >= shootCycle) {
+            if (shootCounter >= heroShootCycle) {
                 shootCounter = 0;
                 heroBullets.addAll(heroAircraft.shoot());
             }
         }
 
-        if (heroAircraft.isFreezeActive()) {
-            return;
-        }
-        if (time % (int) shootCycle != 0) {
+        if (time % (int) enemyShootCycle != 0) {
             return;
         }
         for (AbstractAircraft enemyAircraft : enemyAircrafts) {
@@ -241,11 +251,8 @@ public class Game extends JPanel {
     }
 
     private void aircraftsMoveAction() {
-        boolean freezeSkipsThisFrame = heroAircraft.isFreezeActive() && time % FREEZE_MOVE_DIVISOR != 0;
         for (AbstractAircraft enemyAircraft : enemyAircrafts) {
-            if (!freezeSkipsThisFrame) {
-                enemyAircraft.forward();
-            }
+            enemyAircraft.forward();
         }
         for (AbstractSupply supply : supplies) {
             supply.forward();
@@ -337,25 +344,48 @@ public class Game extends JPanel {
     }
 
     private boolean canEnemyShoot(AbstractAircraft enemyAircraft) {
-        return enemyAircraft instanceof EliteEnemy
+        return enemyAircraft instanceof EnemyAircraft
+                && ((EnemyAircraft) enemyAircraft).canShootNow()
+                && (enemyAircraft instanceof EliteEnemy
                 || enemyAircraft instanceof ElitePlusEnemy
                 || enemyAircraft instanceof EliteProEnemy
-                || enemyAircraft instanceof BossEnemy;
+                || enemyAircraft instanceof BossEnemy);
     }
 
-    public void activateBomb() {
+    public void activateBomb(AbstractSupply bombSupply) {
         if (audioEnabled) {
             SoundManager.playBombExplosion();
         }
+        registerSupplyObservers(bombSupply);
+        bombSupply.getEffectSubject().notifyBombObservers();
+
         for (AbstractAircraft enemyAircraft : enemyAircrafts) {
-            if (!enemyAircraft.notValid() && !(enemyAircraft instanceof BossEnemy)) {
-                enemyAircraft.decreaseHp(Integer.MAX_VALUE);
+            if (enemyAircraft instanceof EnemyAircraft && enemyAircraft.notValid()) {
+                EnemyAircraft defeatedEnemy = (EnemyAircraft) enemyAircraft;
+                if (defeatedEnemy.grantDefeatReward()) {
+                    score += scoreForEnemy(enemyAircraft);
+                }
+            }
+        }
+    }
+
+    public void activateFreeze(AbstractSupply freezeSupply) {
+        registerSupplyObservers(freezeSupply);
+        freezeSupply.getEffectSubject().notifyFreezeObservers();
+    }
+
+    private void registerSupplyObservers(AbstractSupply supply) {
+        supply.getEffectSubject().clearObservers();
+        for (AbstractAircraft enemyAircraft : enemyAircrafts) {
+            if (!enemyAircraft.notValid() && enemyAircraft instanceof EnemyAircraft) {
+                supply.getEffectSubject().addObserver((EnemyAircraft) enemyAircraft);
             }
         }
         for (BaseBullet bullet : enemyBullets) {
-            bullet.vanish();
+            if (!bullet.notValid()) {
+                supply.getEffectSubject().addObserver(bullet);
+            }
         }
-        score += 50;
     }
 
     private void triggerGameClear() {
@@ -454,7 +484,7 @@ public class Game extends JPanel {
         HeroAircraft.resetInstance();
         Window owner = SwingUtilities.getWindowAncestor(this);
         GameDifficulty nextDifficulty = GameDifficulty.select(owner);
-        Game newGame = new Game(nextDifficulty);
+        Game newGame = Game.create(nextDifficulty);
         Container container = owner;
         if (container != null) {
             container.remove(this);
@@ -476,6 +506,41 @@ public class Game extends JPanel {
 
     boolean isGameOverForTest() {
         return gameOverFlag;
+    }
+
+    protected int getTime() {
+        return time;
+    }
+
+    protected void refreshActiveEnemyShootStrategies(double enemyBulletPowerMultiplier, double enemyBulletSpeedMultiplier) {
+        for (AbstractAircraft enemyAircraft : enemyAircrafts) {
+            if (!enemyAircraft.notValid() && enemyAircraft instanceof EnemyAircraft) {
+                EnemySimpleFactory.refreshShootStrategy(
+                        (EnemyAircraft) enemyAircraft,
+                        enemyBulletPowerMultiplier,
+                        enemyBulletSpeedMultiplier
+                );
+            }
+        }
+    }
+
+    protected abstract int getInitialEnemyMaxNumber();
+
+    protected abstract double getInitialEnemySpawnCycle();
+
+    protected abstract double getInitialHeroShootCycle();
+
+    protected abstract double getInitialEnemyShootCycle();
+
+    protected abstract boolean canGenerateBoss();
+
+    protected abstract int getBossTriggerScore();
+
+    protected abstract AbstractAircraft createEnemyAircraft(int gameTime, boolean bossPresent);
+
+    protected abstract AbstractAircraft createBossEnemy();
+
+    protected void updateDifficultyAction() {
     }
 
     @Override

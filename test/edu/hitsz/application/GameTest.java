@@ -39,7 +39,7 @@ public class GameTest {
     @Test
     public void shouldMarkGameOverWhenHeroHpDropsToZero() {
         HeroAircraft.resetInstance();
-        Game game = new Game(GameDifficulty.EXPERT, noopLeaderboardDao, false, false);
+        Game game = new NormalGame(noopLeaderboardDao, false, false);
         HeroAircraft heroAircraft = game.getHeroAircraftForTest();
 
         assertFalse(game.isGameOverForTest());

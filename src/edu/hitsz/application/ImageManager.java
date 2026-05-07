@@ -52,10 +52,8 @@ public class ImageManager {
             BufferedImage reMasterBackground = ImageIO.read(new FileInputStream("src/images/bg5.jpg"));
 
             DIFFICULTY_BACKGROUND_MAP.put(GameDifficulty.EASY, easyBackground);
-            DIFFICULTY_BACKGROUND_MAP.put(GameDifficulty.ADVANCED, advancedBackground);
-            DIFFICULTY_BACKGROUND_MAP.put(GameDifficulty.EXPERT, expertBackground);
-            DIFFICULTY_BACKGROUND_MAP.put(GameDifficulty.MASTER, masterBackground);
-            DIFFICULTY_BACKGROUND_MAP.put(GameDifficulty.RE_MASTER, reMasterBackground);
+            DIFFICULTY_BACKGROUND_MAP.put(GameDifficulty.NORMAL, advancedBackground);
+            DIFFICULTY_BACKGROUND_MAP.put(GameDifficulty.HARD, expertBackground);
 
             BACKGROUND_IMAGE = expertBackground;
             HERO_IMAGE = ImageIO.read(new FileInputStream("src/images/hero.png"));
