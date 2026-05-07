@@ -72,9 +72,7 @@ BombSupply ..> Game : triggers bomb
 FreezeSupply ..> Game : triggers freeze
 
 note bottom
-Observer Pattern:
-BombSupply and FreezeSupply notify all registered enemies and enemy bullets.
-Each observer owns its type-specific reaction.
+观察者模式
 end note
 
 @enduml

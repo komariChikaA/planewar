@@ -43,28 +43,19 @@ Game <|-- NormalGame
 Game <|-- HardGame
 
 note right of Game
-Template method action() fixes the game loop:
-status update, control, difficulty hook,
-enemy spawn, shooting, movement,
-collision, cleanup, render, result check.
+模板方法用action()解决游戏的loop问题
 end note
 
 note bottom of EasyGame
-No boss generation.
-Difficulty remains stable.
+难度不随游戏时间变化，全程保持初始设定
 end note
 
 note bottom of NormalGame
-Enemy spawn cycle, speed,
-and HP increase over time.
-Boss HP stays fixed.
+敌机产生周期、敌机速度、敌机血量
 end note
 
 note bottom of HardGame
-Enemy spawn cycle, speed, HP,
-hero shoot cycle and enemy shoot
-cycle all increase in pressure.
-Boss HP increases per summon.
+敌机产生周期、敌机速度、敌机血量、英雄机射击周期、敌机射击周期
 end note
 
 @enduml
